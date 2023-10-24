@@ -524,6 +524,34 @@ public class DataConverterTest {
     assertEquals(VersionType.INTERNAL, actualRecord.versionType());
   }
 
+  @Test
+  public void testDoNotAddIdIfKeyUnset() {
+    configureDataStream();
+    props.put(ElasticsearchSinkConnectorConfig.UNSET_KEY_CONFIG, "true");
+    converter = new DataConverter(new ElasticsearchSinkConnectorConfig(props));
+    Schema preProcessedSchema = converter.preProcessSchema(schema);
+    Struct struct = new Struct(preProcessedSchema).put("string", "myValue");
+    SinkRecord sinkRecord = createSinkRecordWithValue(struct);
+
+    IndexRequest actualRecord = (IndexRequest) converter.convertRecord(sinkRecord, index);
+
+    assertNull(actualRecord.id());
+  }
+
+  @Test
+  public void testAddIdIfKeySet() {
+    configureDataStream();
+    props.put(ElasticsearchSinkConnectorConfig.UNSET_KEY_CONFIG, "false");
+    converter = new DataConverter(new ElasticsearchSinkConnectorConfig(props));
+    Schema preProcessedSchema = converter.preProcessSchema(schema);
+    Struct struct = new Struct(preProcessedSchema).put("string", "myValue");
+    SinkRecord sinkRecord = createSinkRecordWithValue(struct);
+
+    IndexRequest actualRecord = (IndexRequest) converter.convertRecord(sinkRecord, index);
+
+    assertEquals("topic+0+0", actualRecord.id());
+  }
+
   private void configureDataStream() {
     props.put(ElasticsearchSinkConnectorConfig.DATA_STREAM_TYPE_CONFIG, "logs");
     props.put(ElasticsearchSinkConnectorConfig.DATA_STREAM_DATASET_CONFIG, "dataset");

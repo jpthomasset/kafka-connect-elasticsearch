@@ -50,6 +50,7 @@ import static io.confluent.connect.elasticsearch.ElasticsearchSinkConnectorConfi
 import static io.confluent.connect.elasticsearch.ElasticsearchSinkConnectorConfig.IGNORE_KEY_CONFIG;
 import static io.confluent.connect.elasticsearch.ElasticsearchSinkConnectorConfig.IGNORE_KEY_TOPICS_CONFIG;
 import static io.confluent.connect.elasticsearch.ElasticsearchSinkConnectorConfig.IGNORE_SCHEMA_CONFIG;
+import static io.confluent.connect.elasticsearch.ElasticsearchSinkConnectorConfig.UNSET_KEY_CONFIG;
 import static io.confluent.connect.elasticsearch.ElasticsearchSinkConnectorConfig.IGNORE_SCHEMA_TOPICS_CONFIG;
 import static io.confluent.connect.elasticsearch.ElasticsearchSinkConnectorConfig.KERBEROS_KEYTAB_PATH_CONFIG;
 import static io.confluent.connect.elasticsearch.ElasticsearchSinkConnectorConfig.KERBEROS_PRINCIPAL_CONFIG;
@@ -197,6 +198,16 @@ public class Validator {
       );
       addErrorMessage(IGNORE_SCHEMA_CONFIG, errorMessage);
       addErrorMessage(IGNORE_SCHEMA_TOPICS_CONFIG, errorMessage);
+    }
+
+    if (config.unsetKey() && config.writeMethod() == WriteMethod.UPSERT) {
+      String errorMessage = String.format(
+              "Upserts are not supported without key. %s must not be %s if %s is true.",
+              WRITE_METHOD_CONFIG,
+              WriteMethod.UPSERT,
+              UNSET_KEY_CONFIG
+      );
+      addErrorMessage(WRITE_METHOD_CONFIG, errorMessage);
     }
   }
 

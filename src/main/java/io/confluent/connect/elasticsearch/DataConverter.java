@@ -176,10 +176,11 @@ public class DataConverter {
             .retryOnConflict(Math.min(config.maxInFlightRequests(), 5));
       case INSERT:
         OpType opType = config.isDataStream() ? OpType.CREATE : OpType.INDEX;
-        return maybeAddExternalVersioning(
-            new IndexRequest(index).id(id).source(payload, XContentType.JSON).opType(opType),
-            record
+        IndexRequest request = maybeAddId(
+            new IndexRequest(index).source(payload, XContentType.JSON).opType(opType),
+            id
         );
+        return maybeAddExternalVersioning(request, record);
       default:
         return null; // shouldn't happen
     }
@@ -250,6 +251,24 @@ public class DataConverter {
     if (!config.isDataStream() && !config.shouldIgnoreKey(record.topic())) {
       request.versionType(VersionType.EXTERNAL);
       request.version(record.kafkaOffset());
+    }
+
+    return request;
+  }
+
+  /**
+   * Add id to index request if not configured to unset
+   *
+   * @param request the request currently being constructed for `record`
+   * @param id the id to set if needed
+   * @return the (possibly modified) request which was passed in
+   */
+  private IndexRequest maybeAddId(
+          IndexRequest request,
+          String id
+  ) {
+    if (!config.unsetKey()) {
+      request.id(id);
     }
 
     return request;
